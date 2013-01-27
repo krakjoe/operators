@@ -90,6 +90,12 @@ static int opcodes[] = {
 		
 	ZEND_POST_INC,
 	ZEND_POST_DEC,
+
+	ZEND_PRE_INC_OBJ,
+	ZEND_PRE_DEC_OBJ,
+	
+	ZEND_POST_INC_OBJ,
+	ZEND_POST_DEC_OBJ,
 	0
 };
 
@@ -128,6 +134,12 @@ static const char* opconsts[] = {
 	
 	"OPERATOR_POST_INC",
 	"OPERATOR_POST_DEC",
+
+	"OPERATOR_PRE_INC_OBJ",
+	"OPERATOR_PRE_DEC_OBJ",
+	
+	"OPERATOR_POST_INC_OBJ",
+	"OPERATOR_POST_DEC_OBJ",
 	NULL
 };
 
@@ -171,6 +183,7 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
 			OPS_EX_T(opline->result.var).tmp_var = *result;
+			zval_copy_ctor(&OPS_EX_T(opline->result.var).tmp_var);
 			break;
 
 		case IS_VAR:
