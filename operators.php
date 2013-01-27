@@ -75,12 +75,12 @@ class operable {
 					$this->value++;
 				return 0;
 
-			case OPERATOR_PRE_INC_OBJ: 
-					++$this->value; 
+			case OPERATOR_PRE_DEC: 
+					--$this->value; 
 				return 0;
 			
-			case OPERATOR_POST_INC_OBJ: 
-					$this->value++; 
+			case OPERATOR_POST_DEC: 
+					$this->value--; 
 				return 0;
 
 			default: 
