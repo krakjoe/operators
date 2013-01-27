@@ -55,7 +55,7 @@ zend_module_entry operators_module_entry = {
 ZEND_GET_MODULE(operators)
 #endif
 
-static const int opcodes[] = {
+static int opcodes[] = {
 	ZEND_ADD,
 	ZEND_SUB,
 	ZEND_MUL,
@@ -92,6 +92,8 @@ static const char* opconsts[] = {
 #define OPS_DIR_INT ((Z_TYPE_P(lhs) == IS_OBJECT) ? OPS_LEFT : OPS_RIGHT)
 #define OPS_DIR_VAL ((OPS_DIR_INT == OPS_LEFT) ? lhs : rhs)
 #define OPS_DIR_DATA ((Z_TYPE_P(lhs) == IS_OBJECT) ? rhs : lhs)
+#define OPS_FOP_FREE(i) {if (fops[i].var) zval_dtor(fops[i].var);}
+#define OPS_FOPS_FREE() {OPS_FOP_FREE(0); OPS_FOP_FREE(1);}
 
 static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *freeing, zend_execute_data *execute_data TSRMLS_DC) {
 	freeing->var = NULL;
@@ -122,16 +124,20 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 {
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
-			/* Nothing to do */
+			/* no idea */
+			OPS_EX_T(opline->result.var).var.ptr = result;
+			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
 			break;
 
 		case IS_VAR:
 			OPS_EX_T(opline->result.var).var.ptr = result;
 			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
+			printf("something...\n");
 			break;
 
 		default:
 			zval_ptr_dtor(&result);
+			printf("default...\n");
 	}
 }
 
@@ -145,7 +151,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 		
 		if (line) {
 			zval *lhs = operators_get_ptr(&line->op1, line->op1_type, &fops[0], execute_data TSRMLS_CC);
-			zval *rhs = operators_get_ptr(&line->op2, line->op2_type, &fops[0], execute_data TSRMLS_CC);
+			zval *rhs = operators_get_ptr(&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC);
 			
 			if ((lhs != NULL) && (rhs != NULL)) {
 				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (Z_TYPE_P(rhs) == IS_OBJECT)) {
@@ -202,9 +208,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 										zresult, line, execute_data
 									);	
 									
-									zval_ptr_dtor(&zresult);	
-								
-									execute_data->opline++;
+									zval_ptr_dtor(&zresult);
 								}
 							}
 
@@ -219,8 +223,16 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 			}
 		}
 	}
-	
-	return handled ? 0 : ZEND_USER_OPCODE_DISPATCH;
+
+	if (handled) {
+		OPS_FOPS_FREE();
+
+		execute_data->opline++;		
+
+		return ZEND_USER_OPCODE_CONTINUE;
+	}	
+
+	return ZEND_USER_OPCODE_DISPATCH;
 }
 
 /* {{{ PHP_MINIT_FUNCTION
