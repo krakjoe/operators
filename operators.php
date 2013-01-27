@@ -1,40 +1,4 @@
 <?php
-/*
-class StringPointer {
-	private $string;
-	private $position;
-
-	public function __construct(&$string, $position = 0) {
-		$this->string = $string;
-		$this->position = $position;
-	}
-
-	public function __operators($opcode, $zval = null) {
-		switch($opcode) {
-			case OPERATORS_PRE_INC_OBJ: ++$this->position; break;
-			case OPERATORS_POST_INC_OBJ: $this->position++; break;
-			default: throw new Exception("FUCK");
-		}
-		return 0;
-	}
-	
-	public function __toString(){
-		return $this->string[$this->position];
-	}
-}
-
-$string = "The Cow Jumped Over The Moon";
-$pointer = new StringPointer($string);
-
-while($pointer) {
-	var_dump($pointer);
-
-	printf("%s\n", (string) $pointer);
-	$pointer++;
-}
-
-*/
-
 class operable {
 	private $value;
 
