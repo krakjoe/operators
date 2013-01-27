@@ -91,12 +91,6 @@ static int opcodes[] = {
 	ZEND_POST_INC,
 	ZEND_POST_DEC,
 
-	ZEND_PRE_INC_OBJ,
-	ZEND_PRE_DEC_OBJ,
-	
-	ZEND_POST_INC_OBJ,
-	ZEND_POST_DEC_OBJ,
-
 	ZEND_BOOL,
 	ZEND_BOOL_NOT,
 	0
@@ -137,12 +131,6 @@ static const char* opconsts[] = {
 	
 	"OPERATOR_POST_INC",
 	"OPERATOR_POST_DEC",
-
-	"OPERATOR_PRE_INC_OBJ",
-	"OPERATOR_PRE_DEC_OBJ",
-	
-	"OPERATOR_POST_INC_OBJ",
-	"OPERATOR_POST_DEC_OBJ",
 
 	"OPERATOR_BOOL",	
 	"OPERATOR_BOOL_NOT",
@@ -217,7 +205,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 		line = (execute_data->opline);
 		
 		if (line) {
-			zval *lhs, *rhs;
+			zval *lhs = NULL, *rhs = NULL;
 			
 			lhs = operators_get_ptr(&line->op1, line->op1_type, &fops[0], execute_data TSRMLS_CC);
 			
@@ -225,15 +213,8 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 				/* these work on objects */
 				case ZEND_PRE_INC:
 				case ZEND_PRE_DEC:
-		
 				case ZEND_POST_INC:
 				case ZEND_POST_DEC:
-				/** these appear pointless */
-				case ZEND_PRE_INC_OBJ:
-				case ZEND_PRE_DEC_OBJ:
-	
-				case ZEND_POST_INC_OBJ:
-				case ZEND_POST_DEC_OBJ:
 				/* these don't seem to function */
 				case ZEND_BOOL:
 				case ZEND_BOOL_NOT:
