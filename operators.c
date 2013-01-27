@@ -96,6 +96,9 @@ static int opcodes[] = {
 	
 	ZEND_POST_INC_OBJ,
 	ZEND_POST_DEC_OBJ,
+
+	ZEND_BOOL,
+	ZEND_BOOL_NOT,
 	0
 };
 
@@ -140,6 +143,10 @@ static const char* opconsts[] = {
 	
 	"OPERATOR_POST_INC_OBJ",
 	"OPERATOR_POST_DEC_OBJ",
+
+	"OPERATOR_BOOL",	
+	"OPERATOR_BOOL_NOT",
+
 	NULL
 };
 
@@ -163,13 +170,13 @@ static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *fr
 		case IS_CV:       {
 			zval ***ret = &execute_data->CVs[from->var];
 
-            if (!*ret) {
-                zend_compiled_variable *cv = &EG(active_op_array)->vars[from->var];
+		    if (!*ret) {
+		        zend_compiled_variable *cv = &EG(active_op_array)->vars[from->var];
 
-                if (zend_hash_quick_find(EG(active_symbol_table), cv->name, cv->name_len+1, cv->hash_value, (void**)ret)==FAILURE) {
-                    return &EG(uninitialized_zval);
-                }
-            }
+		        if (zend_hash_quick_find(EG(active_symbol_table), cv->name, cv->name_len+1, cv->hash_value, (void**)ret)==FAILURE) {
+		            return &EG(uninitialized_zval);
+		        }
+		    }
 			
             return **ret;
 		}
@@ -201,18 +208,46 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 }
 
 static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
-	zend_free_op fops[2];
+	zend_free_op fops[2] = {NULL, NULL};
 	zend_op *line;
 	zend_uint handled = 0;
+	zend_uint sided = 0;
 
 	{
 		line = (execute_data->opline);
 		
 		if (line) {
-			zval *lhs = operators_get_ptr(&line->op1, line->op1_type, &fops[0], execute_data TSRMLS_CC);
-			zval *rhs = operators_get_ptr(&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC);
+			zval *lhs, *rhs;
 			
-			if ((lhs != NULL) && (rhs != NULL)) {
+			lhs = operators_get_ptr(&line->op1, line->op1_type, &fops[0], execute_data TSRMLS_CC);
+			
+			switch(line->opcode) {
+				/* these work on objects */
+				case ZEND_PRE_INC:
+				case ZEND_PRE_DEC:
+		
+				case ZEND_POST_INC:
+				case ZEND_POST_DEC:
+				/** these appear pointless */
+				case ZEND_PRE_INC_OBJ:
+				case ZEND_PRE_DEC_OBJ:
+	
+				case ZEND_POST_INC_OBJ:
+				case ZEND_POST_DEC_OBJ:
+				/* these don't seem to function */
+				case ZEND_BOOL:
+				case ZEND_BOOL_NOT:
+					/* nothing to see here */
+				break;
+
+				default:
+					rhs = operators_get_ptr(
+						&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC
+					);
+					sided = 1;
+			}
+			
+			if (!sided && lhs || ((lhs != NULL) && (rhs != NULL))) {
 				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (Z_TYPE_P(rhs) == IS_OBJECT)) {
 					zend_function *zcall;
 					zend_uint side = OPS_DIR_INT;
@@ -246,9 +281,12 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 							array_init(zparams);							
 							{
 								add_next_index_zval(zparams, zopcode);
-								add_next_index_zval(zparams, OPS_DIR_DATA);
+								
+								if (sided) {
+									add_next_index_zval(zparams, OPS_DIR_DATA);
 
-								Z_ADDREF_P(OPS_DIR_DATA);
+									Z_ADDREF_P(OPS_DIR_DATA);
+								}
 
 								zend_fcall_info_args(&info, zparams TSRMLS_CC);
 							}
