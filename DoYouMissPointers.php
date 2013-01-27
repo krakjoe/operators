@@ -29,7 +29,6 @@ class StringPointer {
 					--$this->position;
 				return 0;
 		}
-		return 0;
 	}
 	
 	public function __toString(){

@@ -26,45 +26,65 @@ class operable {
 	
 			/** assign should return zero at the moment */
 			case OPERATOR_ASSIGN_ADD:
-				$this->value += $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value += $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_SUB:
-				$this->value -= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value -= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_DIV:
-				$this->value /= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value /= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_MOD:
-				$this->value %= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value %= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_SL:
-				$this->value <<= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value <<= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_SR:
-				$this->value >>= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value >>= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_CONCAT:
-				$this->value .= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value .= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_BW_OR:
-				$this->value |= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value |= $zval->value;
 				return 0;
 			case OPERATOR_ASSIGN_BW_AND:
-				$this->value &= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value &= $zval->value;
 				return 0;
+			
 			case OPERATOR_ASSIGN_BW_XOR:
-				$this->value ^= $zval;
+				if (is_a($zval, __CLASS__))
+					$this->value ^= $zval->value;
 				return 0;
 
-			case OPERATORS_PRE_INC_OBJ: 
-				++$this->value; 
+			case OPERATOR_PRE_INC:
+					++$this->value;
 				return 0;
-			case OPERATORS_POST_INC_OBJ: 
-				$this->value++; 
+
+			case OPERATOR_POST_INC:
+					$this->value++;
+				return 0;
+
+			case OPERATOR_PRE_INC_OBJ: 
+					++$this->value; 
+				return 0;
+			
+			case OPERATOR_POST_INC_OBJ: 
+					$this->value++; 
 				return 0;
 
 			default: 
-				throw new Exception("Unsupported operator");
+				throw new Exception("Unsupported operator {$opcode}");
 		}
 	}
 }
