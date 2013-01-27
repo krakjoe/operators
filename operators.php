@@ -6,7 +6,7 @@ class operable {
 		$this->value = $value;
 	}
 	
-	public function __operators($opcode, $side, $zval = null) {
+	public function __operators($opcode, $zval = null) {
 		switch($opcode) {
 			case OPERATORS_ADD: return $this->value + $zval; break;
 			
