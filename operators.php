@@ -1,4 +1,40 @@
 <?php
+/*
+class StringPointer {
+	private $string;
+	private $position;
+
+	public function __construct(&$string, $position = 0) {
+		$this->string = $string;
+		$this->position = $position;
+	}
+
+	public function __operators($opcode, $zval = null) {
+		switch($opcode) {
+			case OPERATORS_PRE_INC_OBJ: ++$this->position; break;
+			case OPERATORS_POST_INC_OBJ: $this->position++; break;
+			default: throw new Exception("FUCK");
+		}
+		return 0;
+	}
+	
+	public function __toString(){
+		return $this->string[$this->position];
+	}
+}
+
+$string = "The Cow Jumped Over The Moon";
+$pointer = new StringPointer($string);
+
+while($pointer) {
+	var_dump($pointer);
+
+	printf("%s\n", (string) $pointer);
+	$pointer++;
+}
+
+*/
+
 class operable {
 	private $value;
 
@@ -8,22 +44,21 @@ class operable {
 	
 	public function __operators($opcode, $zval = null) {
 		switch($opcode) {
+			case OPERATORS_ADD: return new operable($this->value + $zval); break;
+			case OPERATORS_SUB: return new operable($this->value - $zval); break;
+			case OPERATORS_MUL: return new operable($this->value * $zval); break;
+			case OPERATORS_DIV: return new operable($this->value / $zval); break;
+			case OPERATORS_SL: return new operable($this->value << $zval); break;
+			case OPERATORS_SR: return new operable($this->value >> $zval); break;
+			case OPERATORS_CONCAT: return new operable($this->value . $zval); break;
+			case OPERATORS_BW_OR: return new operable($this->value | $zval); break;
+			case OPERATORS_BW_AND: return new operable($this->value & $zval); break;
+			case OPERATORS_BW_XOR: return new operable($this->value ^ $zval); break;
 
-			case OPERATORS_ADD: return $this->value + $zval; break;
-			case OPERATORS_SUB: return $this->value - $zval; break;
-			case OPERATORS_MUL: return $this->value * $zval; break;
-			case OPERATORS_DIV: return $this->value / $zval; break;
-			case OPERATORS_SL: return $this->value << $zval; break;
-			case OPERATORS_SR: return $this->value >> $zval; break;
-			case OPERATORS_CONCAT: return $this->value . $zval; break;
-			case OPERATORS_BW_OR: return $this->value | $zval; break;
-			case OPERATORS_BW_AND: return $this->value & $zval; break;
-			case OPERATORS_BW_XOR: return $this->value ^ $zval; break;
-
-			case OPERATOR_IDENTICAL: return $this->value === $zval; break;
-			case OPERATOR_NOT_IDENTICAL: return $this->value !== $zval; break;
-			case OPERATOR_IS_EQUAL: return $this->value == $zval; break;
-			case OPERATOR_IS_NOT_EQUAL: return $this->value != $zval; break;
+			case OPERATOR_IDENTICAL: return new operable($this->value === $zval); break;
+			case OPERATOR_NOT_IDENTICAL: return new operable($this->value !== $zval); break;
+			case OPERATOR_IS_EQUAL: return new operable($this->value == $zval); break;
+			case OPERATOR_IS_NOT_EQUAL: return new operable($this->value != $zval); break;
 	
 			/** assign should return zero at the moment */
 			case OPERATOR_ASSIGN_ADD:
@@ -57,6 +92,13 @@ class operable {
 				$this->value ^= $zval;
 				return 0;
 
+			case OPERATORS_PRE_INC_OBJ: 
+				++$this->value; 
+				return 0;
+			case OPERATORS_POST_INC_OBJ: 
+				$this->value++; 
+				return 0;
+
 			default: 
 				throw new Exception("Unsupported operator");
 		}
@@ -80,7 +122,7 @@ $d |= $a;
 
 $d <<= $b;
 
-$d++;
+$m += $a;
 
 var_dump($b, $c, $d, $m);
 ?>
