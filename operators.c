@@ -183,7 +183,11 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
 			OPS_EX_T(opline->result.var).tmp_var = *result;
-			zval_copy_ctor(&OPS_EX_T(opline->result.var).tmp_var);
+			if (Z_TYPE_P(result) == IS_OBJECT) {
+				zval_copy_ctor(
+					&OPS_EX_T(opline->result.var).tmp_var	
+				);
+			}
 			break;
 
 		case IS_VAR:
