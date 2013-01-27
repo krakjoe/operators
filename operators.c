@@ -184,7 +184,9 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 							{
 								add_next_index_zval(zparams, zopcode);
 								add_next_index_zval(zparams, OPS_DIR_DATA);
-							
+
+								Z_ADDREF_P(OPS_DIR_DATA);
+
 								zend_fcall_info_args(&info, zparams TSRMLS_CC);
 							}
 
