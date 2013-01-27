@@ -124,20 +124,16 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 {
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
-			/* no idea */
-			OPS_EX_T(opline->result.var).var.ptr = result;
-			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
+			OPS_EX_T(opline->result.var).tmp_var = *result;
 			break;
 
 		case IS_VAR:
 			OPS_EX_T(opline->result.var).var.ptr = result;
 			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
-			printf("something...\n");
 			break;
 
 		default:
 			zval_ptr_dtor(&result);
-			printf("default...\n");
 	}
 }
 
