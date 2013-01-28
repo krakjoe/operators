@@ -14,7 +14,6 @@ class operable {
 			case OPS_DIV: return new operable($this->value / $zval); break;
 			case OPS_SL: return new operable($this->value << $zval); break;
 			case OPS_SR: return new operable($this->value >> $zval); break;
-			case OPS_CONCAT: return new operable($this->value . $zval); break;
 			case OPS_BW_OR: return new operable($this->value | $zval); break;
 			case OPS_BW_AND: return new operable($this->value & $zval); break;
 			case OPS_BW_XOR: return new operable($this->value ^ $zval); break;

@@ -79,7 +79,6 @@ static int opcodes[] = {
 	ZEND_MOD,
 	ZEND_SL,
 	ZEND_SR,
-	ZEND_CONCAT,
 	ZEND_BW_OR,
 	ZEND_BW_AND,
 	ZEND_BW_XOR,
@@ -96,7 +95,6 @@ static int opcodes[] = {
 	ZEND_ASSIGN_MOD,
 	ZEND_ASSIGN_SL,
 	ZEND_ASSIGN_SR,
-	ZEND_ASSIGN_CONCAT,
 	ZEND_ASSIGN_BW_OR,
 	ZEND_ASSIGN_BW_AND,
 	ZEND_ASSIGN_BW_XOR,
@@ -106,9 +104,6 @@ static int opcodes[] = {
 		
 	ZEND_POST_INC,
 	ZEND_POST_DEC,
-
-	ZEND_BOOL,
-	ZEND_BOOL_NOT,
 	0
 };
 
@@ -120,7 +115,6 @@ static const char* opconsts[] = {
 	"OPS_MOD",
 	"OPS_SL",
 	"OPS_SR",
-	"OPS_CONCAT",
 	"OPS_BW_OR",
 	"OPS_BW_AND",
 	"OPS_BW_XOR",	
@@ -137,7 +131,6 @@ static const char* opconsts[] = {
 	"OPS_ASSIGN_MOD",
 	"OPS_ASSIGN_SL",
 	"OPS_ASSIGN_SR",
-	"OPS_ASSIGN_CONCAT",
 	"OPS_ASSIGN_BW_OR",
 	"OPS_ASSIGN_BW_AND",
 	"OPS_ASSIGN_BW_XOR",
@@ -147,9 +140,6 @@ static const char* opconsts[] = {
 	
 	"OPS_POST_INC",
 	"OPS_POST_DEC",
-
-	"OPS_BOOL",	
-	"OPS_BOOL_NOT",
 
 	NULL
 };
@@ -233,9 +223,6 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 				case ZEND_PRE_DEC:
 				case ZEND_POST_INC:
 				case ZEND_POST_DEC:
-				/* these don't seem to function */
-				case ZEND_BOOL:
-				case ZEND_BOOL_NOT:
 					/* nothing to see here */
 				break;
 
@@ -244,7 +231,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 						&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC
 					);
 					sided = 1;
-				}	
+				}
 			}
 			
 			if ((!sided && lhs) || ((lhs != NULL) && (rhs != NULL))) {
