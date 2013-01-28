@@ -145,7 +145,7 @@ static const char* opconsts[] = {
 };
 #if PHP_VERSION_ID < 50499
 	#define EX_TMP_VAR(execute_data, offset) ((temp_variable *)((char*)execute_data->Ts + offset))
-	#define EX_CV_NUM(execute_data, offset) (execute_data->CVs[offset])
+	#define EX_CV_NUM(execute_data, offset) (&execute_data->CVs[offset])
 #endif
 #define OPS_ME "__operators"
 #define OPS_LEFT 1
