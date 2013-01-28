@@ -1,6 +1,6 @@
 <?php
 /* pretty pointless ... but cool all the same */
-class StringPointer {
+class StringPointer implements Operators {
 	private $string;
 	private $position;
 	private $end;
@@ -12,20 +12,20 @@ class StringPointer {
 	}
 
 	public function __operators($opcode, $zval = null) {
-		switch($opcode){
-			case OPERATOR_POST_INC:
+		switch($opcode) {
+			case OPS_POST_INC:
 					$this->position++;
 				return 0;
 			
-			case OPERATOR_PRE_INC:
+			case OPS_PRE_INC:
 					++$this->position;
 				return 0;
 			
-			case OPERATOR_POST_DEC:
+			case OPS_POST_DEC:
 					$this->position--;
 				return 0;
 			
-			case OPERATOR_PRE_DEC:
+			case OPS_PRE_DEC:
 					--$this->position;
 				return 0;
 		}

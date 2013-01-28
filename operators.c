@@ -27,8 +27,24 @@
 #include "ext/standard/info.h"
 #include "php_operators.h"
 
+zend_class_entry *operators_class_entry;
+
 /* {{{ operators_functions[] */
 const zend_function_entry operators_functions[] = {PHP_FE_END};
+/* }}} */
+
+/* {{{ operators_arginfo */
+ZEND_BEGIN_ARG_INFO_EX(operators_arginfo, 0, 0, 1)
+	ZEND_ARG_INFO(0, opcode)
+	ZEND_ARG_INFO(0, zval)
+ZEND_END_ARG_INFO()
+/* }}} */
+
+/* {{{ operators_methods[] */
+const zend_function_entry operators_methods[] = {
+	PHP_ABSTRACT_ME(Operators, __operators, operators_arginfo)
+	PHP_FE_END
+};
 /* }}} */
 
 /* {{{ operators_module_entry
@@ -97,43 +113,43 @@ static int opcodes[] = {
 };
 
 static const char* opconsts[] = {
-	"OPERATORS_ADD",
-	"OPERATORS_SUB",
-	"OPERATORS_MUL",
-	"OPERATORS_DIV",
-	"OPERATORS_MOD",
-	"OPERATORS_SL",
-	"OPERATORS_SR",
-	"OPERATORS_CONCAT",
-	"OPERATORS_BW_OR",
-	"OPERATORS_BW_AND",
-	"OPERATORS_BW_XOR",	
+	"OPS_ADD",
+	"OPS_SUB",
+	"OPS_MUL",
+	"OPS_DIV",
+	"OPS_MOD",
+	"OPS_SL",
+	"OPS_SR",
+	"OPS_CONCAT",
+	"OPS_BW_OR",
+	"OPS_BW_AND",
+	"OPS_BW_XOR",	
 
-	"OPERATOR_IDENTICAL",
-	"OPERATOR_NOT_IDENTICAL",
-	"OPERATOR_IS_EQUAL",
-	"OPERATOR_IS_NOT_EQUAL",
+	"OPS_IDENTICAL",
+	"OPS_NOT_IDENTICAL",
+	"OPS_IS_EQUAL",
+	"OPS_IS_NOT_EQUAL",
 
-	"OPERATOR_ASSIGN_ADD",
-	"OPERATOR_ASSIGN_SUB",
-	"OPERATOR_ASSIGN_MUL",
-	"OPERATOR_ASSIGN_DIV",
-	"OPERATOR_ASSIGN_MOD",
-	"OPERATOR_ASSIGN_SL",
-	"OPERATOR_ASSIGN_SR",
-	"OPERATOR_ASSIGN_CONCAT",
-	"OPERATOR_ASSIGN_BW_OR",
-	"OPERATOR_ASSIGN_BW_AND",
-	"OPERATOR_ASSIGN_BW_XOR",
+	"OPS_ASSIGN_ADD",
+	"OPS_ASSIGN_SUB",
+	"OPS_ASSIGN_MUL",
+	"OPS_ASSIGN_DIV",
+	"OPS_ASSIGN_MOD",
+	"OPS_ASSIGN_SL",
+	"OPS_ASSIGN_SR",
+	"OPS_ASSIGN_CONCAT",
+	"OPS_ASSIGN_BW_OR",
+	"OPS_ASSIGN_BW_AND",
+	"OPS_ASSIGN_BW_XOR",
 
-	"OPERATOR_PRE_INC",
-	"OPERATOR_PRE_DEC",
+	"OPS_PRE_INC",
+	"OPS_PRE_DEC",
 	
-	"OPERATOR_POST_INC",
-	"OPERATOR_POST_DEC",
+	"OPS_POST_INC",
+	"OPS_POST_DEC",
 
-	"OPERATOR_BOOL",	
-	"OPERATOR_BOOL_NOT",
+	"OPS_BOOL",	
+	"OPS_BOOL_NOT",
 
 	NULL
 };
@@ -147,13 +163,18 @@ static const char* opconsts[] = {
 #define OPS_DIR_DATA ((Z_TYPE_P(lhs) == IS_OBJECT) ? rhs : lhs)
 #define OPS_FOP_FREE(i) {if (fops[i].var) zval_dtor(fops[i].var);}
 #define OPS_FOPS_FREE() {OPS_FOP_FREE(0); OPS_FOP_FREE(1);}
+#define OPS_ASSIGN(opcode) (opcode <= 20 && opcode >= 1) ? 0 : 1
 
 static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *freeing, zend_execute_data *execute_data TSRMLS_DC) {
 	freeing->var = NULL;
 		
 	switch(type) {
-		case IS_CONST:    return from->zv;
-		case IS_VAR:      return OPS_EX_T(from->var).var.ptr; 
+		case IS_CONST:    {
+			return from->zv;
+		}
+		case IS_VAR:      {
+			return OPS_EX_T(from->var).var.ptr; 
+		}
 		case IS_TMP_VAR:  return (freeing->var = &OPS_EX_T(from->var).tmp_var);
 		case IS_CV:       {
 			zval ***ret = &execute_data->CVs[from->var];
@@ -173,33 +194,30 @@ static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *fr
 	return NULL;
 }
 
-static inline void operators_set_result(zval *result, zend_op *opline, zend_execute_data *execute_data)
+static inline void operators_set_result(zval *result, zend_op *opline, zend_execute_data *execute_data TSRMLS_DC)
 {
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
 			OPS_EX_T(opline->result.var).tmp_var = *result;
 			if (Z_TYPE_P(result) == IS_OBJECT) {
-				zval_copy_ctor(
-					&OPS_EX_T(opline->result.var).tmp_var	
+				Z_OBJ_HT_P(result)->add_ref(
+					result TSRMLS_CC
 				);
 			}
-			break;
+			return;
 
 		case IS_VAR:
 			OPS_EX_T(opline->result.var).var.ptr = result;
 			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
-			break;
-
-		default:
-			zval_ptr_dtor(&result);
+			return;
 	}
 }
 
 static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
-	zend_free_op fops[2] = {NULL, NULL};
-	zend_op *line;
+	zend_op *line = NULL;
 	zend_uint handled = 0;
 	zend_uint sided = 0;
+	zend_free_op fops[2] = {{NULL}, {NULL}};
 
 	{
 		line = (execute_data->opline);
@@ -221,14 +239,15 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 					/* nothing to see here */
 				break;
 
-				default:
+				default: {
 					rhs = operators_get_ptr(
 						&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC
 					);
 					sided = 1;
+				}	
 			}
 			
-			if (!sided && lhs || ((lhs != NULL) && (rhs != NULL))) {
+			if ((!sided && lhs) || ((lhs != NULL) && (rhs != NULL))) {
 				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (Z_TYPE_P(rhs) == IS_OBJECT)) {
 					zend_function *zcall;
 					zend_uint side = OPS_DIR_INT;
@@ -243,7 +262,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 						zend_fcall_info info;
 						zend_fcall_info_cache cache;	
 
-						ALLOC_INIT_ZVAL(zopcode);
+						MAKE_STD_ZVAL(zopcode);
 						
 						ZVAL_LONG(zopcode, line->opcode);
 						
@@ -279,16 +298,14 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 							cache.object_ptr = OPS_DIR_VAL;
 
 							zend_call_function(&info, &cache TSRMLS_CC);
-
+							
 							if (zresult) {
 								if (zresult != EG(uninitialized_zval_ptr)) {
 									handled = 1;
-
 									operators_set_result(
-										zresult, line, execute_data
-									);	
-									
-									zval_ptr_dtor(&zresult);
+										zresult, line, execute_data TSRMLS_CC
+									);
+									FREE_ZVAL(zresult);
 								}
 							}
 
@@ -296,8 +313,6 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 
 							efree(info.params);
 						}
-						
-						zval_ptr_dtor(&zopcode);
 					}
 				}
 			}
@@ -314,14 +329,21 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 
 	return ZEND_USER_OPCODE_DISPATCH;
 }
-
+	
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(operators)
 {	
+	zend_class_entry oe;
 	int *opcode = opcodes;
 	const char* const* opconst = opconsts;
 	
+	INIT_CLASS_ENTRY(
+		oe, "Operators", operators_methods
+	);
+	operators_class_entry=zend_register_internal_class(&oe TSRMLS_CC);
+	operators_class_entry->ce_flags |= ZEND_ACC_INTERFACE;
+
 	while ((*opcode)) {
 		zend_register_long_constant(
 			(*opconst), strlen((*opconst))+1, (*opcode), 
