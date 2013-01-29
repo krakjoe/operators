@@ -143,8 +143,10 @@ static const char* opconsts[] = {
 
 	NULL
 };
-
-#define OPS_EX_T(offset) (*(temp_variable *)((char*)execute_data->Ts + offset))
+#if PHP_VERSION_ID < 50499
+	#define EX_TMP_VAR(execute_data, offset) ((temp_variable *)((char*)execute_data->Ts + offset))
+	#define EX_CV_NUM(execute_data, offset) (&execute_data->CVs[offset])
+#endif
 #define OPS_ME "__operators"
 #define OPS_LEFT 1
 #define OPS_RIGHT 2
@@ -163,11 +165,11 @@ static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *fr
 			return from->zv;
 		}
 		case IS_VAR:      {
-			return OPS_EX_T(from->var).var.ptr; 
+			return EX_TMP_VAR(execute_data, from->var)->var.ptr; 
 		}
-		case IS_TMP_VAR:  return (freeing->var = &OPS_EX_T(from->var).tmp_var);
+		case IS_TMP_VAR:  return (freeing->var = &EX_TMP_VAR(execute_data, from->var)->tmp_var);
 		case IS_CV:       {
-			zval ***ret = &execute_data->CVs[from->var];
+			zval ***ret = EX_CV_NUM(execute_data, from->var);
 
 		    if (!*ret) {
 		        zend_compiled_variable *cv = &EG(active_op_array)->vars[from->var];
@@ -188,7 +190,7 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 {
 	switch (opline->result_type) {
 		case IS_TMP_VAR:
-			OPS_EX_T(opline->result.var).tmp_var = *result;
+			EX_TMP_VAR(execute_data, opline->result.var)->tmp_var = *result;
 			if (Z_TYPE_P(result) == IS_OBJECT) {
 				Z_OBJ_HT_P(result)->add_ref(
 					result TSRMLS_CC
@@ -197,8 +199,8 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 			return;
 
 		case IS_VAR:
-			OPS_EX_T(opline->result.var).var.ptr = result;
-			OPS_EX_T(opline->result.var).var.ptr_ptr = &OPS_EX_T(opline->result.var).var.ptr;
+			EX_TMP_VAR(execute_data, opline->result.var)->var.ptr = result;
+			EX_TMP_VAR(execute_data, opline->result.var)->var.ptr_ptr = &EX_TMP_VAR(execute_data, opline->result.var)->var.ptr;
 			return;
 	}
 }
