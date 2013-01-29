@@ -237,7 +237,7 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 			}
 			
 			if ((!sided && lhs) || ((lhs != NULL) && (rhs != NULL))) {
-				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (Z_TYPE_P(rhs) == IS_OBJECT)) {
+				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (sided && Z_TYPE_P(rhs) == IS_OBJECT)) {
 					zend_function *zcall;
 					zend_uint side = OPS_DIR_INT;
 					
