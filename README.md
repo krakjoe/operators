@@ -95,7 +95,7 @@ In the second example you can see that you need not return scalar values, which 
 * OPS_MOD "%"
 * OPS_SL "<<"
 * OPS_SR ">>"
-* OPS_BW_OR "||"
+* OPS_BW_OR "|"
 * OPS_BW_AND "&"
 * OPS_BW_XOR "^"
 * OPS_IDENTICAL "==="
