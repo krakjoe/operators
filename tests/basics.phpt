@@ -37,11 +37,6 @@ $even = new Test(2);
 $odd = new Test(3);
 $ten = new Test(10);
 
-$strings = array(
-	new Test("first"),
-	new Test("second")
-);
-
 var_dump($even + 3);
 var_dump($ten - 5);
 var_dump($ten * 10);

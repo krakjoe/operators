@@ -101,9 +101,6 @@ static int opcodes[] = {
 
 	ZEND_PRE_INC,
 	ZEND_PRE_DEC,
-		
-	ZEND_POST_INC,
-	ZEND_POST_DEC,
 	0
 };
 
@@ -137,36 +134,27 @@ static const char* opconsts[] = {
 
 	"OPS_PRE_INC",
 	"OPS_PRE_DEC",
-	
-	"OPS_POST_INC",
-	"OPS_POST_DEC",
-
 	NULL
 };
-#if PHP_VERSION_ID < 50499
-	#define EX_TMP_VAR(execute_data, offset) ((temp_variable *)((char*)execute_data->Ts + offset))
-	#define EX_CV_NUM(execute_data, offset) (&execute_data->CVs[offset])
-#endif
+
 #define OPS_ME "__operators"
-#define OPS_LEFT 1
-#define OPS_RIGHT 2
-#define OPS_DIR_INT ((Z_TYPE_P(lhs) == IS_OBJECT) ? OPS_LEFT : OPS_RIGHT)
-#define OPS_DIR_VAL ((OPS_DIR_INT == OPS_LEFT) ? lhs : rhs)
-#define OPS_DIR_DATA ((Z_TYPE_P(lhs) == IS_OBJECT) ? rhs : lhs)
 #define OPS_FOP_FREE(i) {if (fops[i].var) zval_dtor(fops[i].var);}
 #define OPS_FOPS_FREE() {OPS_FOP_FREE(0); OPS_FOP_FREE(1);}
-#define OPS_ASSIGN(opcode) (opcode <= 20 && opcode >= 1) ? 0 : 1
+#define OPS_SINGLE(opcode) (opcode > 33 && opcode < 38)
+#define OPS_ASSIGN(opcode) (opcode > 22 && opcode < 34)
+#define OPS_IS_OPERABLE(pz) ((pz != NULL) && (Z_TYPE_P(pz) == IS_OBJECT) && instanceof_function(Z_OBJCE_P(pz), operators_class_entry TSRMLS_CC))
+
+#if PHP_VERSION_ID < 50499
+# define EX_TMP_VAR(execute_data, offset) ((temp_variable *)((char*)execute_data->Ts + offset))
+# define EX_CV_NUM(execute_data, offset) &execute_data->CVs[offset]
+#endif
 
 static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *freeing, zend_execute_data *execute_data TSRMLS_DC) {
 	freeing->var = NULL;
 		
 	switch(type) {
-		case IS_CONST:    {
-			return from->zv;
-		}
-		case IS_VAR:      {
-			return EX_TMP_VAR(execute_data, from->var)->var.ptr; 
-		}
+		case IS_CONST:    return from->zv;
+		case IS_VAR:      return EX_TMP_VAR(execute_data, from->var)->var.ptr; 
 		case IS_TMP_VAR:  return (freeing->var = &EX_TMP_VAR(execute_data, from->var)->tmp_var);
 		case IS_CV:       {
 			zval ***ret = EX_CV_NUM(execute_data, from->var);
@@ -178,7 +166,7 @@ static inline zval* operators_get_ptr(znode_op *from, int type, zend_free_op *fr
 		            return &EG(uninitialized_zval);
 		        }
 		    }
-			
+
             return **ret;
 		}
 	}
@@ -208,7 +196,6 @@ static inline void operators_set_result(zval *result, zend_op *opline, zend_exec
 static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 	zend_op *line = NULL;
 	zend_uint handled = 0;
-	zend_uint sided = 0;
 	zend_free_op fops[2] = {{NULL}, {NULL}};
 
 	{
@@ -219,89 +206,77 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 			
 			lhs = operators_get_ptr(&line->op1, line->op1_type, &fops[0], execute_data TSRMLS_CC);
 			
-			switch(line->opcode) {
-				/* these work on objects */
-				case ZEND_PRE_INC:
-				case ZEND_PRE_DEC:
-				case ZEND_POST_INC:
-				case ZEND_POST_DEC:
-					/* nothing to see here */
-				break;
-
-				default: {
-					rhs = operators_get_ptr(
-						&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC
-					);
-					sided = 1;
-				}
+			if (!OPS_SINGLE(line->opcode)) {
+				rhs = operators_get_ptr(
+					&line->op2, line->op2_type, &fops[1], execute_data TSRMLS_CC);
 			}
-			
-			if ((!sided && lhs) || ((lhs != NULL) && (rhs != NULL))) {
-				if ((Z_TYPE_P(lhs) == IS_OBJECT) || (Z_TYPE_P(rhs) == IS_OBJECT)) {
-					zend_function *zcall;
-					zend_uint side = OPS_DIR_INT;
+
+			if (OPS_IS_OPERABLE(lhs) || (!OPS_SINGLE(line->opcode) && OPS_IS_OPERABLE(rhs))) {
+				
+				zend_function    *zcall;
+				zval             *zobject = OPS_IS_OPERABLE(lhs) ? lhs : rhs;
+				zval			 *zdata = (zobject == lhs) ? rhs : lhs;
+
+				if (zend_hash_find(&Z_OBJCE_P(zobject)->function_table, OPS_ME, sizeof(OPS_ME), (void **) &zcall) == SUCCESS) {
+					zval *zopcode, *zresult, *zparams;
+
+					zend_fcall_info info;
+					zend_fcall_info_cache cache;	
+
+					MAKE_STD_ZVAL(zopcode);
 					
-					if (zend_hash_find(
-						(side == OPS_LEFT) ? &Z_OBJCE_P(lhs)->function_table : &Z_OBJCE_P(rhs)->function_table,
-						OPS_ME, sizeof(OPS_ME),
-						(void **) &zcall
-					) == SUCCESS) {
-						zval *zopcode, *zresult, *zparams;
-
-						zend_fcall_info info;
-						zend_fcall_info_cache cache;	
-
-						MAKE_STD_ZVAL(zopcode);
+					ZVAL_LONG(zopcode, line->opcode);
+					
+					{
+						info.size = sizeof(info);
+						info.object_ptr = zobject;
+						info.function_name = NULL;
+						info.retval_ptr_ptr = &zresult;
+						info.no_separation = 1;
+						info.symbol_table = NULL;							
+						info.param_count = 0;
+						info.params = NULL;
 						
-						ZVAL_LONG(zopcode, line->opcode);
-						
+						ALLOC_INIT_ZVAL(zparams);
+
+						array_init(zparams);							
 						{
-							info.size = sizeof(info);
-							info.object_ptr = OPS_DIR_VAL;
-							info.function_name = NULL;
-							info.retval_ptr_ptr = &zresult;
-							info.no_separation = 1;
-							info.symbol_table = NULL;							
-							info.param_count = 0;
-							info.params = NULL;
+							add_next_index_zval(zparams, zopcode);
 							
-							ALLOC_INIT_ZVAL(zparams);
+							if (!OPS_SINGLE(line->opcode)) {
+								add_next_index_zval(zparams, zdata);
 
-							array_init(zparams);							
-							{
-								add_next_index_zval(zparams, zopcode);
-								
-								if (sided) {
-									add_next_index_zval(zparams, OPS_DIR_DATA);
-
-									Z_ADDREF_P(OPS_DIR_DATA);
+								if (Z_TYPE_P(zdata) == IS_OBJECT) {
+									Z_ADDREF_P(zdata);
 								}
-
-								zend_fcall_info_args(&info, zparams TSRMLS_CC);
 							}
 
-							cache.initialized = 1;
-							cache.function_handler = zcall;
-							cache.calling_scope = EG(scope);
-							cache.called_scope = Z_OBJCE_P(OPS_DIR_VAL);
-							cache.object_ptr = OPS_DIR_VAL;
+							zend_fcall_info_args(&info, zparams TSRMLS_CC);
+						}
 
-							zend_call_function(&info, &cache TSRMLS_CC);
-							
-							if (zresult) {
-								if (zresult != EG(uninitialized_zval_ptr)) {
-									handled = 1;
+						cache.initialized = 1;
+						cache.function_handler = zcall;
+						cache.calling_scope = EG(scope);
+						cache.called_scope = Z_OBJCE_P(zobject);
+						cache.object_ptr = zobject;
+
+						zend_call_function(&info, &cache TSRMLS_CC);
+						
+						if (zresult) {
+							if (zresult != EG(uninitialized_zval_ptr)) {
+								handled = 1;
+								if (!OPS_ASSIGN(line->opcode)) {
 									operators_set_result(
 										zresult, line, execute_data TSRMLS_CC
 									);
-									FREE_ZVAL(zresult);
 								}
+								FREE_ZVAL(zresult);
 							}
-
-							zval_ptr_dtor(&zparams);
-
-							efree(info.params);
 						}
+						
+						zval_ptr_dtor(&zparams);
+
+						efree(info.params);
 					}
 				}
 			}
