@@ -113,7 +113,7 @@ In the second example you can see that you need not return scalar values, which 
 * OPS_ASSIGN_BW_AND "&="
 * OPS_ASSIGN_BW_XOR "^="
 
-Assignment operators are not expected to return a value, everything else is, and may return any type
+Assignment operators are not expected to return a value. For everything else, if the call to __operators is void, the default handler for the operator will be used.
 
 ### For Fun
 This extension was written for fun, unless you have rock solid PHP fu, do not use this extension, it was written for fun as a learning excercise.
