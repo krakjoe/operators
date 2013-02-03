@@ -257,7 +257,8 @@ static inline int operators_opcode_handler(ZEND_OPCODE_HANDLER_ARGS) {
 						zend_call_function(&info, &cache TSRMLS_CC);
 						
 						if (zresult) {
-							if (zresult != EG(uninitialized_zval_ptr)) {
+							if (OPS_ASSIGN(line->opcode) || 
+								zresult != EG(uninitialized_zval_ptr)) {
 								handled = 1;
 								if (!OPS_ASSIGN(line->opcode)) {
 									operators_set_result(

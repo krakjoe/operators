@@ -44,7 +44,6 @@ class operable implements Operators {
 				else return new operable($this->value >> $zval);
 			break;
 
-			
 			case OPS_BW_OR:
 				if (is_a($zval, __CLASS__))
 					return new operable($this->value | $zval->value);
@@ -88,60 +87,59 @@ class operable implements Operators {
 				else return new operable($this->value != $zval);
 			break;
 	
-			/** assign should return zero at the moment */
 			case OPS_ASSIGN_ADD:
 				if (is_a($zval, __CLASS__))
 					$this->value += $zval->value;
 				else $this->value += $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_SUB:
 				if (is_a($zval, __CLASS__))
 					$this->value -= $zval->value;
 				else $this->value -= $zval;
-				return 0;
+			break;
 				
 			case OPS_ASSIGN_DIV:
 				if (is_a($zval, __CLASS__))
 					$this->value /= $zval->value;
 				else $this->value /= $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_MOD:
 				if (is_a($zval, __CLASS__))
 					$this->value %= $zval->value;
 				else $this->value %= $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_SL:
 				if (is_a($zval, __CLASS__))
 					$this->value <<= $zval->value;
 				else $this->value <<= $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_SR:
 				if (is_a($zval, __CLASS__))
 					$this->value >>= $zval->value;
 				else $this->value >>= $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_BW_OR:
 				if (is_a($zval, __CLASS__))
 					$this->value |= $zval->value;
 				else $this->value |= $zval;
-				return 0;
+			break;
 
 			case OPS_ASSIGN_BW_AND:
 				if (is_a($zval, __CLASS__))
 					$this->value &= $zval->value;
 				else $this->value &= $zval;
-				return 0;
+			break;
 			
 			case OPS_ASSIGN_BW_XOR:
 				if (is_a($zval, __CLASS__))
 					$this->value ^= $zval->value;	
 				else $this->value ^= $zval;
-				return 0;
+			break;
 
 			default: 
 				throw new Exception("Unsupported operator {$opcode}");
