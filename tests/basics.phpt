@@ -25,8 +25,8 @@ class Test implements Operators {
 
 			case OPS_IDENTICAL: return $this->value === $zval; break;
 			case OPS_NOT_IDENTICAL: return $this->value !== $zval; break;
-			case OPS_IS_EQUAL: return $this->value == $zval; break;
-			case OPS_IS_NOT_EQUAL: return $this->value != $zval; break;
+			case OPS_EQUAL: return $this->value == $zval; break;
+			case OPS_NOT_EQUAL: return $this->value != $zval; break;
 		}
 	}
 }
