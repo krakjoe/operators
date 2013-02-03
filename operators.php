@@ -50,7 +50,6 @@ class operable implements Operators {
 				else return new operable($this->value | $zval);
 			break;
 
-			
 			case OPS_BW_AND: 
 				if (is_a($zval, __CLASS__))
 					return new operable($this->value & $zval->value);
@@ -159,5 +158,5 @@ $d += $a;
 
 var_dump($d);
 
-var_dump($d * 10 / 2);
+var_dump(($d * 10) / 2);
 ?>

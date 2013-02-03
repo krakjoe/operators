@@ -23,7 +23,6 @@ class Test implements Operators {
 				if (is_a($zval, __CLASS__))
 					$this->value += $zval->value;
 				else $this->value += $zval;	
-				return 0;
 			break;
 		}
 	}
