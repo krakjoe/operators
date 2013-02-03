@@ -98,9 +98,6 @@ static int opcodes[] = {
 	ZEND_ASSIGN_BW_OR,
 	ZEND_ASSIGN_BW_AND,
 	ZEND_ASSIGN_BW_XOR,
-
-	ZEND_PRE_INC,
-	ZEND_PRE_DEC,
 	0
 };
 
@@ -131,9 +128,6 @@ static const char* opconsts[] = {
 	"OPS_ASSIGN_BW_OR",
 	"OPS_ASSIGN_BW_AND",
 	"OPS_ASSIGN_BW_XOR",
-
-	"OPS_PRE_INC",
-	"OPS_PRE_DEC",
 	NULL
 };
 

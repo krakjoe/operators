@@ -128,7 +128,7 @@ class operable implements Operators {
 			case OPS_ASSIGN_BW_OR:
 				if (is_a($zval, __CLASS__))
 					$this->value |= $zval->value;
-				else $this->value != $zval;
+				else $this->value |= $zval;
 				return 0;
 
 			case OPS_ASSIGN_BW_AND:
