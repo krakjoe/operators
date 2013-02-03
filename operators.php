@@ -74,13 +74,13 @@ class operable implements Operators {
 				else return new operable($this->value !== $zval);
 			break;
 			
-			case OPS_IS_EQUAL:
+			case OPS_EQUAL:
 				if (is_a($zval, __CLASS__))
 					return new operable($this->value == $zval->value);
 				else return new operable($this->value == $zval);
 			break;
 
-			case OPS_IS_NOT_EQUAL:
+			case OPS_NOT_EQUAL:
 				if (is_a($zval, __CLASS__))
 					return new operable($this->value != $zval->value);
 				else return new operable($this->value != $zval);

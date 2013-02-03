@@ -115,8 +115,8 @@ static const char* opconsts[] = {
 
 	"OPS_IDENTICAL",
 	"OPS_NOT_IDENTICAL",
-	"OPS_IS_EQUAL",
-	"OPS_IS_NOT_EQUAL",
+	"OPS_EQUAL",
+	"OPS_NOT_EQUAL",
 
 	"OPS_ASSIGN_ADD",
 	"OPS_ASSIGN_SUB",
