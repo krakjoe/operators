@@ -40,7 +40,7 @@ var_dump($my);
 ?>
 ```
 
-In the example above, you can see how you might use such functionality to manipulate both internal and user defined types with the help of the Operators interface.
+In the first example, you can see how you might use such functionality to manipulate both internal and user defined types with the help of the Operators interface.
 
 ```php
 <?php
@@ -85,6 +85,35 @@ var_dump ((100 * $my) / 2);
 ```
 
 In the second example you can see that you need not return scalar values, which may or may not be useful, who knows ...
+
+### Operator Constants
+
+* OPS_ADD "+"
+* OPS_SUB "-"
+* OPS_MUL "*"
+* OPS_DIV "/"
+* OPS_MOD "%"
+* OPS_SL "<<"
+* OPS_SR ">>"
+* OPS_BW_OR "||"
+* OPS_BW_AND "&"
+* OPS_BW_XOR "^"
+* OPS_IDENTICAL "==="
+* OPS_NOT_IDENTICAL "!=="
+* OPS_EQUAL "=="
+* OPS_NOT_EQUAL "!="
+* OPS_ASSIGN_ADD "+="
+* OPS_ASSIGN_SUB "-="
+* OPS_ASSIGN_MUL "*="
+* OPS_ASSIGN_DIV "/="
+* OPS_ASSIGN_MOD "%="
+* OPS_ASSIGN_SL "<<="
+* OPS_ASSIGN_SR ">>="
+* OPS_ASSIGN_BW_OR "|="
+* OPS_ASSIGN_BW_AND "&="
+* OPS_ASSIGN_BW_XOR "^="
+
+Assignment operators are not expected to return a value, everything else is, and may return any type
 
 ### For Fun
 This extension was written for fun, unless you have rock solid PHP fu, do not use this extension, it was written for fun as a learning excercise.
